@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediConnect Admin</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <div class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <div class="brand-mark">✚</div>
+      <h1>MediConnect Admin</h1>
+      <p>Panel administrativo para control de donaciones, usuarios y solicitudes.</p>
+
+      <label>Correo administrador</label>
+      <input type="email" id="email" placeholder="admin@mediconnect.com" />
+
+      <label>Contraseña</label>
+      <input type="password" id="password" placeholder="Contraseña" />
+
+      <button onclick="loginAdmin()">Entrar al panel</button>
+      <small>Debe existir un usuario con rol <strong>admin</strong> o <strong>validador</strong>.</small>
+    </div>
+  </div>
+
+  <div class="admin-layout hidden" id="adminLayout">
+    <aside class="sidebar">
+      <div class="side-brand">
+        <div class="brand-mark small">✚</div>
+        <div>
+          <h2>MediConnect</h2>
+          <span>Administrador</span>
+        </div>
+      </div>
+
+      <nav>
+        <button class="nav-link active" data-view="dashboard" onclick="showView('dashboard')">📊 Dashboard</button>
+        <button class="nav-link" data-view="donations" onclick="showView('donations')">💊 Donaciones</button>
+        <button class="nav-link" data-view="users" onclick="showView('users')">👥 Usuarios</button>
+        <button class="nav-link" data-view="requests" onclick="showView('requests')">🛡️ Validadores</button>
+      </nav>
+
+      <button class="logout" onclick="logoutAdmin()">Cerrar sesión</button>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1 id="pageTitle">Dashboard</h1>
+          <p id="pageSubtitle">Resumen general de MediConnect.</p>
+        </div>
+        <div class="admin-chip" id="adminName">Admin</div>
+      </header>
+
+      <section id="dashboardView" class="view active">
+        <div class="stats-grid">
+          <article class="stat-card">
+            <span>Donaciones</span>
+            <strong id="totalDonations">0</strong>
+            <small>Total registradas</small>
+          </article>
+          <article class="stat-card warning">
+            <span>Reservadas</span>
+            <strong id="reservedDonations">0</strong>
+            <small>Pendientes de revisión</small>
+          </article>
+          <article class="stat-card success">
+            <span>Entregadas</span>
+            <strong id="deliveredDonations">0</strong>
+            <small>Casos completados</small>
+          </article>
+          <article class="stat-card danger">
+            <span>Usuarios</span>
+            <strong id="totalUsers">0</strong>
+            <small>Registrados en el sistema</small>
+          </article>
+        </div>
+
+        <div class="panel two-cols">
+          <div>
+            <h2>Últimas donaciones</h2>
+            <div id="recentDonations" class="list"></div>
+          </div>
+          <div>
+            <h2>Resumen por estado</h2>
+            <div id="statusSummary" class="summary-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="donationsView" class="view">
+        <div class="toolbar">
+          <input type="text" id="donationSearch" placeholder="Buscar por medicamento, tipo o donante..." oninput="renderDonations()" />
+          <select id="statusFilter" onchange="renderDonations()">
+            <option value="todos">Todos</option>
+            <option value="disponible">Disponible</option>
+            <option value="reservado">Reservado</option>
+            <option value="aprobado">Aprobado</option>
+            <option value="entregado">Entregado</option>
+            <option value="rechazado">Rechazado</option>
+          </select>
+        </div>
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th>Medicamento</th>
+                <th>Tipo</th>
+                <th>Cantidad</th>
+                <th>Vencimiento</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="donationsTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="usersView" class="view">
+        <div class="toolbar">
+          <input type="text" id="userSearch" placeholder="Buscar usuario por nombre, correo o rol..." oninput="renderUsers()" />
+        </div>
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Correo</th>
+                <th>Rol</th>
+                <th>Registro</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="usersTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="requestsView" class="view">
+        <div class="panel">
+          <h2>Solicitudes para ser validador</h2>
+          <p class="muted">Aquí se listan las solicitudes pendientes para dar permisos de validador.</p>
+          <div id="validatorRequests" class="request-grid"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <script src="admin.js"></script>
+</body>
+</html>
