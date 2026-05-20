@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MediConnect Admin</title>
   <link rel="stylesheet" href="admin.css" />
 </head>
+
 <body>
   <div class="login-screen" id="loginScreen">
     <div class="login-card">
@@ -39,6 +41,9 @@
         <button class="nav-link" data-view="donations" onclick="showView('donations')">💊 Donaciones</button>
         <button class="nav-link" data-view="users" onclick="showView('users')">👥 Usuarios</button>
         <button class="nav-link" data-view="requests" onclick="showView('requests')">🛡️ Validadores</button>
+        <button class="nav-link" data-view="notifications" onclick="showView('notifications')">🔔
+          Notificaciones</button>
+        Notificaciones</button>
       </nav>
 
       <button class="logout" onclick="logoutAdmin()">Cerrar sesión</button>
@@ -91,7 +96,8 @@
 
       <section id="donationsView" class="view">
         <div class="toolbar">
-          <input type="text" id="donationSearch" placeholder="Buscar por medicamento, tipo o donante..." oninput="renderDonations()" />
+          <input type="text" id="donationSearch" placeholder="Buscar por medicamento, tipo o donante..."
+            oninput="renderDonations()" />
           <select id="statusFilter" onchange="renderDonations()">
             <option value="todos">Todos</option>
             <option value="disponible">Disponible</option>
@@ -120,7 +126,8 @@
 
       <section id="usersView" class="view">
         <div class="toolbar">
-          <input type="text" id="userSearch" placeholder="Buscar usuario por nombre, correo o rol..." oninput="renderUsers()" />
+          <input type="text" id="userSearch" placeholder="Buscar usuario por nombre, correo o rol..."
+            oninput="renderUsers()" />
         </div>
         <div class="table-card">
           <table>
@@ -145,10 +152,44 @@
           <div id="validatorRequests" class="request-grid"></div>
         </div>
       </section>
+
+      <section id="notificationsView" class="view">
+        <div class="panel">
+          <h2>📨 Enviar Notificación</h2>
+          <div style="display:flex;flex-direction:column;gap:12px;max-width:600px;">
+            <select id="notifTipo" class="input-field" style="appearance:auto;padding:12px;">
+              <option value="todos">📢 A todos los usuarios</option>
+              <option value="donante">💊 Solo Donantes</option>
+              <option value="receptor">📦 Solo Receptores</option>
+              <option value="validador">🛡️ Solo Validadores</option>
+              <option value="personal">👤 Usuario específico</option>
+            </select>
+
+            <select id="notifUsuario" class="input-field" style="appearance:auto;padding:12px;display:none;">
+              <option value="">Selecciona usuario...</option>
+            </select>
+
+            <input type="text" id="notifTitulo" class="input-field" placeholder="Título" style="padding:12px;">
+            <textarea id="notifMensaje" class="input-field" rows="4" placeholder="Mensaje..."
+              style="padding:12px;"></textarea>
+
+            <button class="btn approve" onclick="enviarNotificacion()" style="padding:14px;font-size:14px;">
+              📨 Enviar Notificación
+            </button>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:20px;">
+          <h2>📋 Historial</h2>
+          <div id="historialNotificaciones"></div>
+        </div>
+      </section>
+
     </main>
   </div>
 
   <div id="toast" class="toast"></div>
   <script src="admin.js"></script>
 </body>
+
 </html>
