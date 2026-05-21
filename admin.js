@@ -112,39 +112,32 @@ function startAdmin() {
 }
 
 function showView(view) {
-  document
-    .querySelectorAll(".view")
-    .forEach((v) => v.classList.remove("active"));
-  document
-    .querySelectorAll(".nav-link")
-    .forEach((v) => v.classList.remove("active"));
-
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.querySelectorAll(".nav-link").forEach(v => v.classList.remove("active"));
+  
   const viewEl = document.getElementById(`${view}View`);
   const navEl = document.querySelector(`[data-view="${view}"]`);
-
+  
   if (viewEl) viewEl.classList.add("active");
   if (navEl) navEl.classList.add("active");
 
   const titles = {
     dashboard: ["Dashboard", "Resumen general de MediConnect."],
     donations: ["Donaciones", "Control y validación de medicamentos."],
-    users: [
-      "Usuarios",
-      "Administración de donantes, receptores y validadores.",
-    ],
+    users: ["Usuarios", "Administración de donantes, receptores y validadores."],
     requests: ["Solicitudes", "Validador y Donante."],
     notifications: ["🔔 Notificaciones", "Envía avisos a los usuarios."],
   };
-
+  
   const title = titles[view] || [view, ""];
   document.getElementById("pageTitle").textContent = title[0];
   document.getElementById("pageSubtitle").textContent = title[1];
 
-  if (view === "notifications") cargarHistorialNotificaciones();
-  if (view === "requests") loadAll(); // Recargar solicitudes
-  if (view === "dashboard") loadAll();
-  if (view === "donations") loadAll();
-  if (view === "users") loadAll();
+  if (view === 'notifications') cargarHistorialNotificaciones();
+  if (view === 'requests') loadAll(); // Recargar solicitudes
+  if (view === 'dashboard') loadAll();
+  if (view === 'donations') loadAll();
+  if (view === 'users') loadAll();
 }
 
 async function loadAll() {
@@ -203,8 +196,8 @@ function renderDashboard() {
   const recent = donations.slice(0, 5);
   document.getElementById("recentDonations").innerHTML = recent.length
     ? recent
-        .map(
-          (d) => `
+      .map(
+        (d) => `
     <div class="item">
       <div>
         <b>${escapeHtml(d.nombre)}</b>
@@ -213,8 +206,8 @@ function renderDashboard() {
       <span class="badge ${d.estado}">${d.estado}</span>
     </div>
   `,
-        )
-        .join("")
+      )
+      .join("")
     : '<p class="muted">No hay donaciones registradas.</p>';
 
   const states = [
@@ -249,8 +242,8 @@ function renderDonations() {
 
   document.getElementById("donationsTable").innerHTML = filtered.length
     ? filtered
-        .map(
-          (d) => `
+      .map(
+        (d) => `
     <tr>
       <td><strong>${escapeHtml(d.nombre)}</strong><br><small>${escapeHtml(getDonorName(d))}</small></td>
       <td>${escapeHtml(d.tipo)}</td>
@@ -258,16 +251,49 @@ function renderDonations() {
       <td>${d.fecha_vencimiento || "-"}</td>
       <td><span class="badge ${d.estado}">${d.estado}</span></td>
       <td>
-        <div class="actions">
-          ${d.estado === "reservado" ? `<button class="btn approve" onclick="changeDonationStatus('${d.id}','aprobado')">Aprobar</button><button class="btn reject" onclick="changeDonationStatus('${d.id}','rechazado')">Rechazar</button>` : ""}
-          ${d.estado === "aprobado" ? `<button class="btn deliver" onclick="changeDonationStatus('${d.id}','entregado')">Entregado</button>` : ""}
-          ${d.estado !== "rechazado" ? `<button class="btn neutral" onclick="changeDonationStatus('${d.id}','disponible')">Liberar</button>` : ""}
-        </div>
-      </td>
+  <div class="actions">
+
+    <!-- BLOQUE A -->
+    <div class="action-block">
+      <select 
+        class="status-select status-${d.estado}"
+        onchange="handleDonationStatusChange('${d.id}', this.value)"
+      >
+        <option value="">${d.estado.toUpperCase()}</option>
+
+        ${d.estado !== "disponible"
+          ? `<option value="disponible">Disponible</option>`
+          : ""}
+
+        ${d.estado !== "reservado"
+          ? `<option value="reservado">Reservado</option>`
+          : ""}
+
+        ${d.estado !== "aprobado"
+          ? `<option value="aprobado">Aprobado</option>`
+          : ""}
+
+        ${d.estado !== "entregado"
+          ? `<option value="entregado">Entregado</option>`
+          : ""}
+
+        ${d.estado !== "rechazado"
+          ? `<option value="rechazado">Rechazado</option>`
+          : ""}
+      </select>
+    </div>
+
+    <!-- BLOQUE B -->
+    <div class="action-block action-extra">
+
+    </div>
+
+  </div>
+</td>
     </tr>
   `,
-        )
-        .join("")
+      )
+      .join("")
     : '<tr><td colspan="6">No se encontraron donaciones.</td></tr>';
 }
 
@@ -280,8 +306,8 @@ function renderUsers() {
 
   document.getElementById("usersTable").innerHTML = filtered.length
     ? filtered
-        .map(
-          (u) => `
+      .map(
+        (u) => `
     <tr>
       <td><strong>${escapeHtml(u.nombre || "Sin nombre")}</strong></td>
       <td>${escapeHtml(u.email || "-")}</td>
@@ -296,16 +322,15 @@ function renderUsers() {
       </td>
     </tr>
   `,
-        )
-        .join("")
+      )
+      .join("")
     : '<tr><td colspan="5">No se encontraron usuarios.</td></tr>';
 }
 
 function renderRequests() {
   const box = document.getElementById("validatorRequests");
 
-  let html =
-    '<h3 class="request-section-title">🛡️ Solicitudes de Validador</h3>';
+  let html = "<h3>🛡️ Solicitudes de Validador</h3>";
 
   if (!requestsValidador || !requestsValidador.length) {
     html += '<p class="muted">No hay solicitudes pendientes de validador.</p>';
@@ -313,24 +338,23 @@ function renderRequests() {
     html += requestsValidador
       .map(
         (r) => `
-  <div class="request-card">
-    <div class="info">
-      <h3>${escapeHtml(r.nombre || "Usuario")}</h3>
-      <p>📧 ${escapeHtml(r.email || "")}</p>
-      <p>📝 ${escapeHtml(r.motivo || "Sin motivo")} ${r.experiencia ? "· 🩺 " + escapeHtml(r.experiencia) : ""}</p>
-      <p style="font-size:11px;">📅 ${formatDate(r.created_at)}</p>
-    </div>
-    <div class="actions">
-      <button class="btn approve" onclick="processRequest('validador','${r.id}','${r.usuario_id}','aprobado')">✅ Aprobar</button>
-      <button class="btn reject" onclick="processRequest('validador','${r.id}','${r.usuario_id}','rechazado')">❌ Rechazar</button>
-    </div>
-  </div>
-`,
+      <div class="request-card">
+        <h3>${escapeHtml(r.nombre || "Usuario")}</h3>
+        <p>📧 ${escapeHtml(r.email || "")}</p>
+        <p>📝 Motivo: ${escapeHtml(r.motivo || "No especificado")}</p>
+        <p>🩺 Experiencia: ${escapeHtml(r.experiencia || "No especificada")}</p>
+        <p>📅 ${formatDate(r.created_at)}</p>
+        <div class="actions">
+          <button class="btn approve" onclick="processRequest('validador','${r.id}','${r.usuario_id}','aprobado')">✅ Aprobar</button>
+          <button class="btn reject" onclick="processRequest('validador','${r.id}','${r.usuario_id}','rechazado')">❌ Rechazar</button>
+        </div>
+      </div>
+    `,
       )
       .join("");
   }
 
-  html += '<h3 class="request-section-title">🩺 Solicitudes de Donante</h3>';
+  html += '<h3 style="margin-top:24px;">🩺 Solicitudes de Donante</h3>';
 
   if (!requestsDonante || !requestsDonante.length) {
     html += '<p class="muted">No hay solicitudes pendientes de donante.</p>';
@@ -339,12 +363,11 @@ function renderRequests() {
       .map(
         (r) => `
       <div class="request-card">
-        <div class="info">
-          <h3>${escapeHtml(r.nombre || "Usuario")}</h3>
-          <p>📧 ${escapeHtml(r.email || "")}</p>
-          <p>📝 ${escapeHtml(r.motivo || "Sin motivo")} ${r.tipo_medicamentos ? "· 💊 " + escapeHtml(r.tipo_medicamentos) : ""}</p>
-          <p style="font-size:11px;">📅 ${formatDate(r.created_at)}</p>
-        </div>
+        <h3>${escapeHtml(r.nombre || "Usuario")}</h3>
+        <p>📧 ${escapeHtml(r.email || "")}</p>
+        <p>📝 Motivo: ${escapeHtml(r.motivo || "No especificado")}</p>
+        <p>💊 Tipo: ${escapeHtml(r.tipo_medicamentos || "No especificado")}</p>
+        <p>📅 ${formatDate(r.created_at)}</p>
         <div class="actions">
           <button class="btn approve" onclick="processRequest('donante','${r.id}','${r.usuario_id}','aprobado')">✅ Aprobar</button>
           <button class="btn reject" onclick="processRequest('donante','${r.id}','${r.usuario_id}','rechazado')">❌ Rechazar</button>
@@ -384,6 +407,12 @@ async function processRequest(tipo, requestId, userId, status) {
     "success",
   );
   await loadAll();
+}
+
+function handleDonationStatusChange(id, estado) {
+  if (!estado) return;
+
+  changeDonationStatus(id, estado);
 }
 
 async function changeDonationStatus(id, estado) {
@@ -431,167 +460,79 @@ function escapeHtml(value) {
 // ===== NOTIFICACIONES =====
 
 // Mostrar/ocultar selector de usuario
-document
-  .getElementById("notifTipo")
-  ?.addEventListener("change", async function () {
-    const selectUsuario = document.getElementById("notifUsuario");
-    if (this.value === "personal") {
-      selectUsuario.style.display = "block";
-      const users = await sb.select(
-        "usuarios",
-        "select=id,nombre,email&order=nombre",
-      );
-      selectUsuario.innerHTML =
-        '<option value="">Selecciona...</option>' +
-        users
-          .map(
-            (u) => `<option value="${u.id}">${u.nombre} (${u.email})</option>`,
-          )
-          .join("");
-    } else {
-      selectUsuario.style.display = "none";
-    }
-  });
+document.getElementById('notifTipo')?.addEventListener('change', async function() {
+  const selectUsuario = document.getElementById('notifUsuario');
+  if (this.value === 'personal') {
+    selectUsuario.style.display = 'block';
+    const users = await sb.select('usuarios', 'select=id,nombre,email&order=nombre');
+    selectUsuario.innerHTML = '<option value="">Selecciona...</option>' + 
+      users.map(u => `<option value="${u.id}">${u.nombre} (${u.email})</option>`).join('');
+  } else {
+    selectUsuario.style.display = 'none';
+  }
+});
 
 async function enviarNotificacion() {
-  const tipo = document.getElementById("notifTipo").value;
-  const titulo = document.getElementById("notifTitulo").value.trim();
-  const mensaje = document.getElementById("notifMensaje").value.trim();
-
-  if (!titulo || !mensaje)
-    return showToast("Completa título y mensaje", "error");
-
+  const tipo = document.getElementById('notifTipo').value;
+  const titulo = document.getElementById('notifTitulo').value.trim();
+  const mensaje = document.getElementById('notifMensaje').value.trim();
+  
+  if (!titulo || !mensaje) return showToast('Completa título y mensaje', 'error');
+  
   try {
-    if (tipo === "personal") {
-      const usuarioId = document.getElementById("notifUsuario").value;
-      if (!usuarioId) return showToast("Selecciona un usuario", "error");
-
-      const result = await sb.insert("notificaciones", {
-        usuario_id: usuarioId,
-        titulo,
-        mensaje,
-        tipo: "personal",
+    if (tipo === 'personal') {
+      const usuarioId = document.getElementById('notifUsuario').value;
+      if (!usuarioId) return showToast('Selecciona un usuario', 'error');
+      
+      const result = await sb.insert('notificaciones', {
+        usuario_id: usuarioId, titulo, mensaje, tipo: 'personal'
       });
-      if (!result) throw new Error("No se pudo insertar");
-    } else if (tipo === "todos") {
-      const result = await sb.insert("notificaciones", {
-        usuario_id: null,
-        titulo,
-        mensaje,
-        tipo: "general",
+      if (!result) throw new Error('No se pudo insertar');
+      
+    } else if (tipo === 'todos') {
+      const result = await sb.insert('notificaciones', {
+        usuario_id: null, titulo, mensaje, tipo: 'general'
       });
-      if (!result) throw new Error("No se pudo insertar");
+      if (!result) throw new Error('No se pudo insertar');
+      
     } else {
-      const usuarios = await sb.select("usuarios", `rol=eq.${tipo}&select=id`);
+      const usuarios = await sb.select('usuarios', `rol=eq.${tipo}&select=id`);
       for (const u of usuarios) {
-        await sb.insert("notificaciones", {
-          usuario_id: u.id,
-          titulo,
-          mensaje,
-          tipo: "general",
+        await sb.insert('notificaciones', {
+          usuario_id: u.id, titulo, mensaje, tipo: 'general'
         });
       }
     }
-
-    showToast("Notificación enviada ✅", "success");
-    document.getElementById("notifTitulo").value = "";
-    document.getElementById("notifMensaje").value = "";
+    
+    showToast('Notificación enviada ✅', 'success');
+    document.getElementById('notifTitulo').value = '';
+    document.getElementById('notifMensaje').value = '';
     cargarHistorialNotificaciones();
   } catch (error) {
     console.error(error);
-    showToast("Error al enviar", "error");
+    showToast('Error al enviar', 'error');
   }
 }
 
 async function cargarHistorialNotificaciones() {
-  const box = document.getElementById("historialNotificaciones");
+  const box = document.getElementById('historialNotificaciones');
   if (!box) return;
-
-  try {
-    const notifs = await sb.select("notificaciones", "order=created_at.desc&limit=20");
-    box.innerHTML = notifs.length
-      ? notifs.map((n) => `
-        <div class="item">
-          <div>
-            <b>${escapeHtml(n.titulo)}</b>
-            <small>${n.usuario_id ? "👤 Personal" : "📢 General"} · ${formatDate(n.created_at)}</small>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span class="badge ${n.tipo === 'personal' ? 'reservado' : 'aprobado'}">${n.tipo}</span>
-            <button onclick="eliminarNotificacion('${n.id}')" style="
-              background: none;
-              border: none;
-              color: #EF4444;
-              cursor: pointer;
-              font-size: 16px;
-              padding: 4px 6px;
-              border-radius: 6px;
-            " title="Eliminar">🗑️</button>
-          </div>
-        </div>
-      `).join("")
-      : '<p class="muted">No hay notificaciones enviadas.</p>';
-  } catch (e) {
-    box.innerHTML = '<p class="muted">Tabla notificaciones no encontrada.</p>';
-  }
-}
-
-// Nueva función para eliminar
-async function eliminarNotificacion(id) {
-  if (!confirm('¿Eliminar esta notificación?')) return;
   
   try {
-    const r = await fetch(`https://htuagycwflhqxghhotjf.supabase.co/rest/v1/notificaciones?id=eq.${id}`, {
-      method: 'DELETE',
-      headers: sb.headers  // ← Usar los headers de sb
-    });
-    
-    if (r.ok) {
-      showToast('Notificación eliminada', 'success');
-      cargarHistorialNotificaciones();
-    } else {
-      showToast('Error al eliminar', 'error');
-    }
+    const notifs = await sb.select('notificaciones', 'order=created_at.desc&limit=20');
+    box.innerHTML = notifs.length ? notifs.map(n => `
+      <div class="item">
+        <div>
+          <b>${escapeHtml(n.titulo)}</b>
+          <small>${n.usuario_id ? '👤 Personal' : '📢 General'} · ${formatDate(n.created_at)}</small>
+        </div>
+        <span class="badge ${n.tipo === 'personal' ? 'reservado' : 'aprobado'}">${n.tipo}</span>
+      </div>
+    `).join('') : '<p class="muted">No hay notificaciones enviadas.</p>';
   } catch (e) {
-    showToast('Error de conexión', 'error');
+    box.innerHTML = '<p class="muted">Tabla notificaciones no encontrada. Ejecuta el SQL para crearla.</p>';
   }
 }
-
 window.addEventListener("DOMContentLoaded", () => {
   if (getAdmin()) startAdmin();
 });
-
-// ===== CIERRE DE SESIÓN POR INACTIVIDAD (ADMIN) =====
-const INACTIVITY_TIME = 15 * 60 * 1000; // 15 minutos
-
-let inactivityTimer;
-
-function startInactivityTimer() {
-  clearTimeout(inactivityTimer);
-  
-  if (getAdmin()) {
-    inactivityTimer = setTimeout(() => {
-      console.log('⏰ Sesión admin cerrada por inactividad');
-      localStorage.removeItem(SESSION_KEY);
-      localStorage.clear();
-      alert('Tu sesión de administrador ha sido cerrada por inactividad.');
-      location.reload();
-    }, INACTIVITY_TIME);
-  }
-}
-
-// Eventos que reinician el temporizador
-['click', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach((event) => {
-  document.addEventListener(event, () => {
-    if (getAdmin()) {
-      startInactivityTimer();
-    }
-  });
-});
-
-// Iniciar al entrar al panel
-const originalStartAdmin = startAdmin;
-startAdmin = function() {
-  originalStartAdmin();
-  startInactivityTimer();
-};
