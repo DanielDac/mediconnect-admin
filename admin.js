@@ -1,6 +1,6 @@
 const SUPABASE_URL = "https://htuagycwflhqxghhotjf.supabase.co";
 const SUPABASE_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0dWFneWN3ZmxocXhnaGhvdGpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1MTM5MzgsImV4cCI6MjA5MzA4OTkzOH0.i_u0YEuO3DLyhTVjpf0jUNW0ZLnf4p0eG5yCGCzi_Tw";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6Imh0dWFneWN3ZmxocXhnaGhvdGpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1MTM5MzgsImV4cCI6MjA5MzA4OTkzOH0.i_u0YEuO3DLyhTVjpf0jUNW0ZLnf4p0eG5yCGCzi_Tw";
 const SESSION_KEY = "mc_admin_user";
 
 const sb = {
@@ -10,25 +10,30 @@ const sb = {
     Authorization: "Bearer " + SUPABASE_KEY,
     Prefer: "return=representation",
   },
+
   async select(table, query = "") {
     const url = `${SUPABASE_URL}/rest/v1/${table}?${query}`;
     const response = await fetch(url, { headers: this.headers });
     if (!response.ok) throw new Error(await response.text());
     return await response.json();
   },
+
   async insert(table, body) {
     const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
       method: "POST",
       headers: this.headers,
       body: JSON.stringify(body),
     });
+
     if (!response.ok) {
       console.error("Error al insertar:", await response.text());
       return null;
     }
+
     const data = await response.json();
     return Array.isArray(data) ? data[0] : data;
   },
+
   async update(table, id, body) {
     const response = await fetch(
       `${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`,
@@ -38,6 +43,7 @@ const sb = {
         body: JSON.stringify(body),
       },
     );
+
     return response.ok;
   },
 };
@@ -70,8 +76,9 @@ async function loginAdmin() {
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value.trim();
 
-  if (!email || !password)
+  if (!email || !password) {
     return showToast("Completa correo y contraseña", "error");
+  }
 
   try {
     const query = `select=*&email=eq.${encodeURIComponent(email)}&password=eq.${encodeURIComponent(password)}&limit=1`;
@@ -80,6 +87,7 @@ async function loginAdmin() {
     if (!data.length) return showToast("Credenciales incorrectas", "error");
 
     const user = data[0];
+
     if (!["admin", "validador"].includes(String(user.rol).toLowerCase())) {
       return showToast(
         "Este usuario no tiene permisos administrativos",
@@ -108,16 +116,17 @@ function startAdmin() {
   document.getElementById("adminLayout").classList.remove("hidden");
   document.getElementById("adminName").textContent =
     user.nombre || user.email || "Admin";
+
   loadAll();
 }
 
 function showView(view) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
   document.querySelectorAll(".nav-link").forEach(v => v.classList.remove("active"));
-  
+
   const viewEl = document.getElementById(`${view}View`);
   const navEl = document.querySelector(`[data-view="${view}"]`);
-  
+
   if (viewEl) viewEl.classList.add("active");
   if (navEl) navEl.classList.add("active");
 
@@ -128,16 +137,13 @@ function showView(view) {
     requests: ["Solicitudes", "Validador y Donante."],
     notifications: ["🔔 Notificaciones", "Envía avisos a los usuarios."],
   };
-  
+
   const title = titles[view] || [view, ""];
   document.getElementById("pageTitle").textContent = title[0];
   document.getElementById("pageSubtitle").textContent = title[1];
 
-  if (view === 'notifications') cargarHistorialNotificaciones();
-  if (view === 'requests') loadAll(); // Recargar solicitudes
-  if (view === 'dashboard') loadAll();
-  if (view === 'donations') loadAll();
-  if (view === 'users') loadAll();
+  if (view === "notifications") cargarHistorialNotificaciones();
+  if (["requests", "dashboard", "donations", "users"].includes(view)) loadAll();
 }
 
 async function loadAll() {
@@ -146,6 +152,7 @@ async function loadAll() {
       "donaciones",
       "select=*,usuarios!donante_id(nombre,email)&order=created_at.desc",
     );
+
     users = await sb.select("usuarios", "select=*&order=created_at.desc");
 
     requestsValidador = [];
@@ -185,27 +192,31 @@ function getDonorName(d) {
 
 function renderDashboard() {
   document.getElementById("totalDonations").textContent = donations.length;
+
   document.getElementById("reservedDonations").textContent = donations.filter(
-    (d) => d.estado === "reservado",
+    d => d.estado === "reservado",
   ).length;
+
   document.getElementById("deliveredDonations").textContent = donations.filter(
-    (d) => d.estado === "entregado",
+    d => d.estado === "entregado",
   ).length;
+
   document.getElementById("totalUsers").textContent = users.length;
 
   const recent = donations.slice(0, 5);
+
   document.getElementById("recentDonations").innerHTML = recent.length
     ? recent
       .map(
-        (d) => `
-    <div class="item">
-      <div>
-        <b>${escapeHtml(d.nombre)}</b>
-        <small>${escapeHtml(d.tipo)} · ${d.cantidad} un. · ${escapeHtml(getDonorName(d))}</small>
-      </div>
-      <span class="badge ${d.estado}">${d.estado}</span>
-    </div>
-  `,
+        d => `
+          <div class="item">
+            <div>
+              <b>${escapeHtml(d.nombre)}</b>
+              <small>${escapeHtml(d.tipo)} · ${d.cantidad} un. · ${escapeHtml(getDonorName(d))}</small>
+            </div>
+            <span class="badge ${d.estado}">${d.estado}</span>
+          </div>
+        `,
       )
       .join("")
     : '<p class="muted">No hay donaciones registradas.</p>';
@@ -217,14 +228,15 @@ function renderDashboard() {
     "entregado",
     "rechazado",
   ];
+
   document.getElementById("statusSummary").innerHTML = states
     .map(
-      (s) => `
-    <div class="item">
-      <b>${s}</b>
-      <span class="badge ${s}">${donations.filter((d) => d.estado === s).length}</span>
-    </div>
-  `,
+      s => `
+        <div class="item">
+          <b>${s}</b>
+          <span class="badge ${s}">${donations.filter(d => d.estado === s).length}</span>
+        </div>
+      `,
     )
     .join("");
 }
@@ -234,64 +246,117 @@ function renderDonations() {
     document.getElementById("donationSearch")?.value.toLowerCase() || "";
   const filter = document.getElementById("statusFilter")?.value || "todos";
 
-  const filtered = donations.filter((d) => {
+  const filtered = donations.filter(d => {
     const text =
       `${d.nombre} ${d.tipo} ${getDonorName(d)} ${d.estado}`.toLowerCase();
+
     return text.includes(search) && (filter === "todos" || d.estado === filter);
   });
 
   document.getElementById("donationsTable").innerHTML = filtered.length
     ? filtered
       .map(
-        (d) => `
-    <tr>
-      <td><strong>${escapeHtml(d.nombre)}</strong><br><small>${escapeHtml(getDonorName(d))}</small></td>
-      <td>${escapeHtml(d.tipo)}</td>
-      <td>${d.cantidad}</td>
-      <td>${d.fecha_vencimiento || "-"}</td>
-      <td><span class="badge ${d.estado}">${d.estado}</span></td>
-      <td>
-        <div class="actions">
-          ${d.estado === "reservado" ? `<button class="btn approve" onclick="changeDonationStatus('${d.id}','aprobado')">Aprobar</button><button class="btn reject" onclick="changeDonationStatus('${d.id}','rechazado')">Rechazar</button>` : ""}
-          ${d.estado === "aprobado" ? `<button class="btn deliver" onclick="changeDonationStatus('${d.id}','entregado')">Entregado</button>` : ""}
-          ${d.estado !== "rechazado" ? `<button class="btn neutral" onclick="changeDonationStatus('${d.id}','disponible')">Liberar</button>` : ""}
-        </div>
-      </td>
-      <td style="text-align: center;">
-        <button class="btn-emoji" onclick="verEvidencia('${d.id}')" style="font-size: 18px; background: transparent; border: none; cursor: pointer; padding: 4px;" title="Ver Evidencia">👁️</button>
-      </td>
-    </tr>
-  `,
+        d => `
+          <tr>
+            <td>
+              <strong>${escapeHtml(d.nombre)}</strong>
+              <br>
+              <small>${escapeHtml(getDonorName(d))}</small>
+            </td>
+            <td>${escapeHtml(d.tipo)}</td>
+            <td>${d.cantidad}</td>
+            <td>${d.fecha_vencimiento || "-"}</td>
+            <td>
+              <span class="badge ${d.estado}">${d.estado}</span>
+            </td>
+            <td>
+              <div class="actions">
+
+                <!-- BLOQUE A -->
+                <div class="action-block">
+                  <select
+                    class="status-select status-${d.estado}"
+                    onchange="handleDonationStatusChange('${d.id}', this.value)"
+                  >
+                    <option value="">${String(d.estado).toUpperCase()}</option>
+
+                    ${d.estado !== "disponible"
+                      ? `<option value="disponible">Disponible</option>`
+                      : ""}
+
+                    ${d.estado !== "reservado"
+                      ? `<option value="reservado">Reservado</option>`
+                      : ""}
+
+                    ${d.estado !== "aprobado"
+                      ? `<option value="aprobado">Aprobado</option>`
+                      : ""}
+
+                    ${d.estado !== "entregado"
+                      ? `<option value="entregado">Entregado</option>`
+                      : ""}
+
+                    ${d.estado !== "rechazado"
+                      ? `<option value="rechazado">Rechazado</option>`
+                      : ""}
+                  </select>
+                </div>
+
+                <!-- BLOQUE B -->
+                <div class="action-block action-extra">
+                  <button
+                    class="btn-emoji"
+                    onclick="verEvidencia('${d.id}')"
+                    style="font-size:18px;background:transparent;border:none;cursor:pointer;padding:4px;"
+                    title="Ver evidencia y ubicación"
+                  >
+                    👁️
+                  </button>
+                </div>
+
+              </div>
+            </td>
+          </tr>
+        `,
       )
       .join("")
-    : '<tr><td colspan="7">No se encontraron donaciones.</td></tr>';
+    : '<tr><td colspan="6">No se encontraron donaciones.</td></tr>';
 }
 
 function renderUsers() {
   const search =
     document.getElementById("userSearch")?.value.toLowerCase() || "";
-  const filtered = users.filter((u) =>
+
+  const filtered = users.filter(u =>
     `${u.nombre} ${u.email} ${u.rol}`.toLowerCase().includes(search),
   );
 
   document.getElementById("usersTable").innerHTML = filtered.length
     ? filtered
       .map(
-        (u) => `
-    <tr>
-      <td><strong>${escapeHtml(u.nombre || "Sin nombre")}</strong></td>
-      <td>${escapeHtml(u.email || "-")}</td>
-      <td><span class="badge aprobado">${escapeHtml(u.rol || "usuario")}</span></td>
-      <td>${formatDate(u.created_at)}</td>
-      <td>
-        <div class="actions">
-          ${u.rol !== "admin" ? `<button class="btn neutral" onclick="changeUserRole('${u.id}','admin')">Hacer admin</button>` : ""}
-          ${u.rol !== "validador" ? `<button class="btn approve" onclick="changeUserRole('${u.id}','validador')">Validador</button>` : ""}
-          ${u.rol !== "receptor" ? `<button class="btn reject" onclick="changeUserRole('${u.id}','receptor')">Receptor</button>` : ""}
-        </div>
-      </td>
-    </tr>
-  `,
+        u => `
+          <tr>
+            <td><strong>${escapeHtml(u.nombre || "Sin nombre")}</strong></td>
+            <td>${escapeHtml(u.email || "-")}</td>
+            <td><span class="badge aprobado">${escapeHtml(u.rol || "usuario")}</span></td>
+            <td>${formatDate(u.created_at)}</td>
+            <td>
+              <div class="actions">
+                ${u.rol !== "admin"
+                  ? `<button class="btn neutral" onclick="changeUserRole('${u.id}','admin')">Hacer admin</button>`
+                  : ""}
+
+                ${u.rol !== "validador"
+                  ? `<button class="btn approve" onclick="changeUserRole('${u.id}','validador')">Validador</button>`
+                  : ""}
+
+                ${u.rol !== "receptor"
+                  ? `<button class="btn reject" onclick="changeUserRole('${u.id}','receptor')">Receptor</button>`
+                  : ""}
+              </div>
+            </td>
+          </tr>
+        `,
       )
       .join("")
     : '<tr><td colspan="5">No se encontraron usuarios.</td></tr>';
@@ -307,19 +372,19 @@ function renderRequests() {
   } else {
     html += requestsValidador
       .map(
-        (r) => `
-      <div class="request-card">
-        <h3>${escapeHtml(r.nombre || "Usuario")}</h3>
-        <p>📧 ${escapeHtml(r.email || "")}</p>
-        <p>📝 Motivo: ${escapeHtml(r.motivo || "No especificado")}</p>
-        <p>🩺 Experiencia: ${escapeHtml(r.experiencia || "No especificada")}</p>
-        <p>📅 ${formatDate(r.created_at)}</p>
-        <div class="actions">
-          <button class="btn approve" onclick="processRequest('validador','${r.id}','${r.usuario_id}','aprobado')">✅ Aprobar</button>
-          <button class="btn reject" onclick="processRequest('validador','${r.id}','${r.usuario_id}','rechazado')">❌ Rechazar</button>
-        </div>
-      </div>
-    `,
+        r => `
+          <div class="request-card">
+            <h3>${escapeHtml(r.nombre || "Usuario")}</h3>
+            <p>📧 ${escapeHtml(r.email || "")}</p>
+            <p>📝 Motivo: ${escapeHtml(r.motivo || "No especificado")}</p>
+            <p>🩺 Experiencia: ${escapeHtml(r.experiencia || "No especificada")}</p>
+            <p>📅 ${formatDate(r.created_at)}</p>
+            <div class="actions">
+              <button class="btn approve" onclick="processRequest('validador','${r.id}','${r.usuario_id}','aprobado')">✅ Aprobar</button>
+              <button class="btn reject" onclick="processRequest('validador','${r.id}','${r.usuario_id}','rechazado')">❌ Rechazar</button>
+            </div>
+          </div>
+        `,
       )
       .join("");
   }
@@ -331,19 +396,19 @@ function renderRequests() {
   } else {
     html += requestsDonante
       .map(
-        (r) => `
-      <div class="request-card">
-        <h3>${escapeHtml(r.nombre || "Usuario")}</h3>
-        <p>📧 ${escapeHtml(r.email || "")}</p>
-        <p>📝 Motivo: ${escapeHtml(r.motivo || "No especificado")}</p>
-        <p>💊 Tipo: ${escapeHtml(r.tipo_medicamentos || "No especificado")}</p>
-        <p>📅 ${formatDate(r.created_at)}</p>
-        <div class="actions">
-          <button class="btn approve" onclick="processRequest('donante','${r.id}','${r.usuario_id}','aprobado')">✅ Aprobar</button>
-          <button class="btn reject" onclick="processRequest('donante','${r.id}','${r.usuario_id}','rechazado')">❌ Rechazar</button>
-        </div>
-      </div>
-    `,
+        r => `
+          <div class="request-card">
+            <h3>${escapeHtml(r.nombre || "Usuario")}</h3>
+            <p>📧 ${escapeHtml(r.email || "")}</p>
+            <p>📝 Motivo: ${escapeHtml(r.motivo || "No especificado")}</p>
+            <p>💊 Tipo: ${escapeHtml(r.tipo_medicamentos || "No especificado")}</p>
+            <p>📅 ${formatDate(r.created_at)}</p>
+            <div class="actions">
+              <button class="btn approve" onclick="processRequest('donante','${r.id}','${r.usuario_id}','aprobado')">✅ Aprobar</button>
+              <button class="btn reject" onclick="processRequest('donante','${r.id}','${r.usuario_id}','rechazado')">❌ Rechazar</button>
+            </div>
+          </div>
+        `,
       )
       .join("");
   }
@@ -354,37 +419,47 @@ function renderRequests() {
 async function processRequest(tipo, requestId, userId, status) {
   const tabla =
     tipo === "validador" ? "solicitudes_validador" : "solicitudes_donante";
+
   const nuevoRol = tipo === "validador" ? "validador" : "donante";
 
   if (
     !confirm(
       `¿${status === "aprobado" ? "Aprobar" : "Rechazar"} esta solicitud de ${tipo}?`,
     )
-  )
+  ) {
     return;
+  }
 
-  // Actualizar solicitud
   let ok = await sb.update(tabla, requestId, { estado: status });
 
-  // Si es aprobado, cambiar rol del usuario
   if (ok && status === "aprobado" && userId) {
     ok = await sb.update("usuarios", userId, { rol: nuevoRol });
   }
 
   if (!ok) return showToast("No se pudo procesar la solicitud", "error");
+
   showToast(
     `Solicitud de ${tipo} ${status === "aprobado" ? "aprobada" : "rechazada"}`,
     "success",
   );
+
   await loadAll();
+}
+
+function handleDonationStatusChange(id, estado) {
+  if (!estado) return;
+  changeDonationStatus(id, estado);
 }
 
 async function changeDonationStatus(id, estado) {
   if (!confirm(`¿Cambiar estado a ${estado}?`)) return;
+
   const body = { estado };
+
   if (estado === "disponible") body.receptor_id = null;
 
   const ok = await sb.update("donaciones", id, body);
+
   if (!ok) return showToast("No se pudo actualizar la donación", "error");
 
   showToast("Donación actualizada", "success");
@@ -393,14 +468,18 @@ async function changeDonationStatus(id, estado) {
 
 async function changeUserRole(id, rol) {
   if (!confirm(`¿Asignar rol ${rol} a este usuario?`)) return;
+
   const ok = await sb.update("usuarios", id, { rol });
+
   if (!ok) return showToast("No se pudo actualizar el usuario", "error");
+
   showToast("Rol actualizado", "success");
   await loadAll();
 }
 
 function formatDate(value) {
   if (!value) return "-";
+
   return new Date(value).toLocaleDateString("es-GT", {
     day: "2-digit",
     month: "short",
@@ -411,7 +490,7 @@ function formatDate(value) {
 function escapeHtml(value) {
   return String(value ?? "").replace(
     /[&<>'"]/g,
-    (char) =>
+    char =>
       ({
         "&": "&amp;",
         "<": "&lt;",
@@ -421,119 +500,158 @@ function escapeHtml(value) {
       })[char],
   );
 }
+
 // ===== NOTIFICACIONES =====
 
-// Mostrar/ocultar selector de usuario
-document.getElementById('notifTipo')?.addEventListener('change', async function() {
-  const selectUsuario = document.getElementById('notifUsuario');
-  if (this.value === 'personal') {
-    selectUsuario.style.display = 'block';
-    const users = await sb.select('usuarios', 'select=id,nombre,email&order=nombre');
-    selectUsuario.innerHTML = '<option value="">Selecciona...</option>' + 
-      users.map(u => `<option value="${u.id}">${u.nombre} (${u.email})</option>`).join('');
+document.getElementById("notifTipo")?.addEventListener("change", async function () {
+  const selectUsuario = document.getElementById("notifUsuario");
+
+  if (this.value === "personal") {
+    selectUsuario.style.display = "block";
+
+    const users = await sb.select("usuarios", "select=id,nombre,email&order=nombre");
+
+    selectUsuario.innerHTML =
+      '<option value="">Selecciona...</option>' +
+      users
+        .map(u => `<option value="${u.id}">${u.nombre} (${u.email})</option>`)
+        .join("");
   } else {
-    selectUsuario.style.display = 'none';
+    selectUsuario.style.display = "none";
   }
 });
 
 async function enviarNotificacion() {
-  const tipo = document.getElementById('notifTipo').value;
-  const titulo = document.getElementById('notifTitulo').value.trim();
-  const mensaje = document.getElementById('notifMensaje').value.trim();
-  
-  if (!titulo || !mensaje) return showToast('Completa título y mensaje', 'error');
-  
+  const tipo = document.getElementById("notifTipo").value;
+  const titulo = document.getElementById("notifTitulo").value.trim();
+  const mensaje = document.getElementById("notifMensaje").value.trim();
+
+  if (!titulo || !mensaje) {
+    return showToast("Completa título y mensaje", "error");
+  }
+
   try {
-    if (tipo === 'personal') {
-      const usuarioId = document.getElementById('notifUsuario').value;
-      if (!usuarioId) return showToast('Selecciona un usuario', 'error');
-      
-      const result = await sb.insert('notificaciones', {
-        usuario_id: usuarioId, titulo, mensaje, tipo: 'personal'
+    if (tipo === "personal") {
+      const usuarioId = document.getElementById("notifUsuario").value;
+
+      if (!usuarioId) return showToast("Selecciona un usuario", "error");
+
+      const result = await sb.insert("notificaciones", {
+        usuario_id: usuarioId,
+        titulo,
+        mensaje,
+        tipo: "personal",
       });
-      if (!result) throw new Error('No se pudo insertar');
-      
-    } else if (tipo === 'todos') {
-      const result = await sb.insert('notificaciones', {
-        usuario_id: null, titulo, mensaje, tipo: 'general'
+
+      if (!result) throw new Error("No se pudo insertar");
+    } else if (tipo === "todos") {
+      const result = await sb.insert("notificaciones", {
+        usuario_id: null,
+        titulo,
+        mensaje,
+        tipo: "general",
       });
-      if (!result) throw new Error('No se pudo insertar');
-      
+
+      if (!result) throw new Error("No se pudo insertar");
     } else {
-      const usuarios = await sb.select('usuarios', `rol=eq.${tipo}&select=id`);
+      const usuarios = await sb.select("usuarios", `rol=eq.${tipo}&select=id`);
+
       for (const u of usuarios) {
-        await sb.insert('notificaciones', {
-          usuario_id: u.id, titulo, mensaje, tipo: 'general'
+        await sb.insert("notificaciones", {
+          usuario_id: u.id,
+          titulo,
+          mensaje,
+          tipo: "general",
         });
       }
     }
-    
-    showToast('Notificación enviada ✅', 'success');
-    document.getElementById('notifTitulo').value = '';
-    document.getElementById('notifMensaje').value = '';
+
+    showToast("Notificación enviada ✅", "success");
+
+    document.getElementById("notifTitulo").value = "";
+    document.getElementById("notifMensaje").value = "";
+
     cargarHistorialNotificaciones();
   } catch (error) {
     console.error(error);
-    showToast('Error al enviar', 'error');
+    showToast("Error al enviar", "error");
   }
 }
 
 async function cargarHistorialNotificaciones() {
-  const box = document.getElementById('historialNotificaciones');
+  const box = document.getElementById("historialNotificaciones");
+
   if (!box) return;
-  
+
   try {
-    const notifs = await sb.select('notificaciones', 'order=created_at.desc&limit=20');
-    box.innerHTML = notifs.length ? notifs.map(n => `
-      <div class="item">
-        <div>
-          <b>${escapeHtml(n.titulo)}</b>
-          <small>${n.usuario_id ? '👤 Personal' : '📢 General'} · ${formatDate(n.created_at)}</small>
-        </div>
-        <span class="badge ${n.tipo === 'personal' ? 'reservado' : 'aprobado'}">${n.tipo}</span>
-      </div>
-    `).join('') : '<p class="muted">No hay notificaciones enviadas.</p>';
+    const notifs = await sb.select(
+      "notificaciones",
+      "order=created_at.desc&limit=20",
+    );
+
+    box.innerHTML = notifs.length
+      ? notifs
+        .map(
+          n => `
+            <div class="item">
+              <div>
+                <b>${escapeHtml(n.titulo)}</b>
+                <small>${n.usuario_id ? "👤 Personal" : "📢 General"} · ${formatDate(n.created_at)}</small>
+              </div>
+              <span class="badge ${n.tipo === "personal" ? "reservado" : "aprobado"}">${n.tipo}</span>
+            </div>
+          `,
+        )
+        .join("")
+      : '<p class="muted">No hay notificaciones enviadas.</p>';
   } catch (e) {
-    box.innerHTML = '<p class="muted">Tabla notificaciones no encontrada. Ejecuta el SQL para crearla.</p>';
+    box.innerHTML =
+      '<p class="muted">Tabla notificaciones no encontrada. Ejecuta el SQL para crearla.</p>';
   }
 }
+
 // ===== EVIDENCIAS Y UBICACIÓN MODAL =====
+
 function closeEvidenceModal() {
-  document.getElementById('evidenceModal').classList.remove('show');
+  document.getElementById("evidenceModal").classList.remove("show");
 }
 
 function verEvidencia(id) {
   const d = donations.find(x => x.id === id);
   if (!d) return;
 
-  const modal = document.getElementById('evidenceModal');
-  const title = document.getElementById('evidenceModalTitle');
-  const body = document.getElementById('evidenceModalBody');
+  const modal = document.getElementById("evidenceModal");
+  const title = document.getElementById("evidenceModalTitle");
+  const body = document.getElementById("evidenceModalBody");
 
-  modal.classList.add('show');
+  modal.classList.add("show");
 
-  // Format delivery/update date
   const dateStr = d.updated_at || d.created_at;
-  const formattedDate = dateStr 
-    ? new Date(dateStr).toLocaleString('es-GT', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    : 'No disponible';
 
-  let locationHtml = '';
+  const formattedDate = dateStr
+    ? new Date(dateStr).toLocaleString("es-GT", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "No disponible";
+
+  let locationHtml = "";
+
   if (d.lat && d.lng) {
+    const lat = parseFloat(d.lat);
+    const lng = parseFloat(d.lng);
+
     locationHtml = `
       <div class="modal-section">
         <div class="modal-section-title">📍 Lugar de entrega</div>
-        <div id="modalMap" style="height: 200px; width: 100%; border-radius: 12px; margin-top: 8px;"></div>
-        <div style="font-size: 13px; color: var(--muted); margin-top: 8px;">
-          Coordenadas: <strong>${d.lat.toFixed(6)}, ${d.lng.toFixed(6)}</strong>
+        <div id="modalMap" style="height:200px;width:100%;border-radius:12px;margin-top:8px;"></div>
+        <div style="font-size:13px;color:var(--muted);margin-top:8px;">
+          Coordenadas: <strong>${lat.toFixed(6)}, ${lng.toFixed(6)}</strong>
         </div>
-        <a class="map-link-btn" href="https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lng}" target="_blank">
+        <a class="map-link-btn" href="https://www.google.com/maps/search/?api=1&query=${lat},${lng}" target="_blank">
           🗺️ Abrir en Google Maps
         </a>
       </div>
@@ -550,12 +668,15 @@ function verEvidencia(id) {
   const tieneFirma = !!d.firma_url;
   const tieneFoto = !!d.evidencia_url;
 
-  if (d.estado !== 'entregado') {
-    let evidencePreviewHtml = '';
+  if (d.estado !== "entregado") {
+    let evidencePreviewHtml = "";
+
     if (tieneFirma || tieneFoto) {
-      let previewSections = '';
+      let previewSections = "";
+
       if (tieneFirma) {
         const firmaUrl = d.firma_url || d.evidencia_url;
+
         previewSections += `
           <div class="modal-section">
             <div class="modal-section-title">✍️ Firma del Receptor</div>
@@ -565,8 +686,10 @@ function verEvidencia(id) {
           </div>
         `;
       }
+
       if (tieneFoto) {
         const fotoUrl = d.foto_entrega_url || d.evidencia_url;
+
         previewSections += `
           <div class="modal-section">
             <div class="modal-section-title">📸 Foto de Entrega</div>
@@ -576,41 +699,46 @@ function verEvidencia(id) {
           </div>
         `;
       }
+
       evidencePreviewHtml = `
-        <div style="margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
-          <span class="badge ${d.estado}" style="margin-bottom: 8px;">${d.estado}</span>
-          <p style="font-size: 14px; line-height: 1.5;">El donante ha registrado la siguiente evidencia. Revisa y marca como entregado.</p>
+        <div style="margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:12px;">
+          <span class="badge ${d.estado}" style="margin-bottom:8px;">${d.estado}</span>
+          <p style="font-size:14px;line-height:1.5;">El donante ha registrado la siguiente evidencia. Revisa y marca como entregado.</p>
         </div>
         ${previewSections}
       `;
     }
 
-    title.textContent = 'Evidencia de Entrega';
+    title.textContent = "Evidencia de Entrega";
+
     body.innerHTML = `
       ${evidencePreviewHtml || `
-        <div style="margin-bottom: 16px;">
-          <span class="badge ${d.estado}" style="margin-bottom: 8px;">${d.estado}</span>
-          <p style="font-size: 14px; line-height: 1.5;">Esta donación aún <strong>no ha sido entregada</strong>. A continuación se detalla la ubicación registrada para la entrega:</p>
+        <div style="margin-bottom:16px;">
+          <span class="badge ${d.estado}" style="margin-bottom:8px;">${d.estado}</span>
+          <p style="font-size:14px;line-height:1.5;">Esta donación aún <strong>no ha sido entregada</strong>. A continuación se detalla la ubicación registrada para la entrega:</p>
         </div>
       `}
       ${locationHtml}
     `;
   } else {
-    title.textContent = 'Evidencia de Entrega';
+    title.textContent = "Evidencia de Entrega";
 
     let photoHtml = `<p class="muted">No se registró foto de entrega.</p>`;
     let signatureHtml = `<p class="muted">No se registró firma digital.</p>`;
 
     if (tieneFirma) {
       const firmaUrl = d.firma_url || d.evidencia_url;
+
       signatureHtml = `
         <div class="evidence-img-container">
           <img src="${firmaUrl}" alt="Firma del receptor" />
         </div>
       `;
     }
+
     if (tieneFoto) {
       const fotoUrl = d.foto_entrega_url || d.evidencia_url;
+
       photoHtml = `
         <div class="evidence-img-container">
           <img src="${fotoUrl}" alt="Foto de entrega" />
@@ -619,55 +747,60 @@ function verEvidencia(id) {
     }
 
     body.innerHTML = `
-      <div style="margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
-        <span class="badge entregado" style="margin-bottom: 8px;">Entregado</span>
+      <div style="margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:12px;">
+        <span class="badge entregado" style="margin-bottom:8px;">Entregado</span>
         <div class="evidence-info-row">
           <span class="label">Fecha de Entrega:</span>
           <span class="value">${formattedDate}</span>
         </div>
       </div>
-      
+
       <div class="modal-section">
         <div class="modal-section-title">📸 Foto de evidencia de entrega</div>
         ${photoHtml}
       </div>
 
-      <div class="modal-section" style="margin-top: 16px;">
+      <div class="modal-section" style="margin-top:16px;">
         <div class="modal-section-title">✍️ Firma del receptor</div>
         ${signatureHtml}
       </div>
 
-      <div style="margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:16px;">
         ${locationHtml}
       </div>
     `;
   }
 
-  // Initialize the Google Maps map after the DOM elements are rendered
   if (d.lat && d.lng) {
     setTimeout(() => {
       try {
-        const mapDiv = document.getElementById('modalMap');
-        const pos = { lat: parseFloat(d.lat), lng: parseFloat(d.lng) };
+        const mapDiv = document.getElementById("modalMap");
+        if (!mapDiv || typeof google === "undefined") return;
+
+        const pos = {
+          lat: parseFloat(d.lat),
+          lng: parseFloat(d.lng),
+        };
+
         const gMap = new google.maps.Map(mapDiv, {
           center: pos,
           zoom: 15,
           mapTypeControl: false,
           streetViewControl: false,
-          fullscreenControl: false
+          fullscreenControl: false,
         });
 
         const infoWindow = new google.maps.InfoWindow({
-          content: `<b>${escapeHtml(d.nombre)}</b><br>${d.estado === 'entregado' ? 'Entregado aquí' : 'Lugar de entrega'}`
+          content: `<b>${escapeHtml(d.nombre)}</b><br>${d.estado === "entregado" ? "Entregado aquí" : "Lugar de entrega"}`,
         });
 
         const marker = new google.maps.Marker({
           position: pos,
           map: gMap,
-          title: d.nombre
+          title: d.nombre,
         });
 
-        marker.addListener('click', () => {
+        marker.addListener("click", () => {
           infoWindow.open(gMap, marker);
         });
 
