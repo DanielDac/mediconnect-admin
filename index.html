@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MediConnect Admin</title>
   <link rel="stylesheet" href="admin.css" />
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBw1zNOC5Wag-1tceI2vs9zKjvHkCiLN1g&libraries=places"></script>
 </head>
 
 <body>
@@ -117,6 +118,7 @@
                 <th>Vencimiento</th>
                 <th>Estado</th>
                 <th>Acciones</th>
+                <th>Evidencias</th>
               </tr>
             </thead>
             <tbody id="donationsTable"></tbody>
@@ -189,6 +191,20 @@
   </div>
 
   <div id="toast" class="toast"></div>
+
+  <!-- Modal para ver Evidencias / Ubicación -->
+  <div id="evidenceModal" class="modal-overlay" onclick="if(event.target === this) closeEvidenceModal()">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="evidenceModalTitle">Evidencia de Donación</h3>
+        <button class="close-btn" onclick="closeEvidenceModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="evidenceModalBody">
+        <!-- Contenido dinámico -->
+      </div>
+    </div>
+  </div>
+
   <script src="admin.js"></script>
 </body>
 
