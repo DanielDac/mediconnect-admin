@@ -257,11 +257,14 @@ function renderDonations() {
           ${d.estado !== "rechazado" ? `<button class="btn neutral" onclick="changeDonationStatus('${d.id}','disponible')">Liberar</button>` : ""}
         </div>
       </td>
+      <td style="text-align: center;">
+        <button class="btn-emoji" onclick="verEvidencia('${d.id}')" style="font-size: 18px; background: transparent; border: none; cursor: pointer; padding: 4px;" title="Ver Evidencia">👁️</button>
+      </td>
     </tr>
   `,
       )
       .join("")
-    : '<tr><td colspan="6">No se encontraron donaciones.</td></tr>';
+    : '<tr><td colspan="7">No se encontraron donaciones.</td></tr>';
 }
 
 function renderUsers() {
@@ -494,6 +497,188 @@ async function cargarHistorialNotificaciones() {
     box.innerHTML = '<p class="muted">Tabla notificaciones no encontrada. Ejecuta el SQL para crearla.</p>';
   }
 }
+// ===== EVIDENCIAS Y UBICACIÓN MODAL =====
+function closeEvidenceModal() {
+  document.getElementById('evidenceModal').classList.remove('show');
+}
+
+function verEvidencia(id) {
+  const d = donations.find(x => x.id === id);
+  if (!d) return;
+
+  const modal = document.getElementById('evidenceModal');
+  const title = document.getElementById('evidenceModalTitle');
+  const body = document.getElementById('evidenceModalBody');
+
+  modal.classList.add('show');
+
+  // Format delivery/update date
+  const dateStr = d.updated_at || d.created_at;
+  const formattedDate = dateStr 
+    ? new Date(dateStr).toLocaleString('es-GT', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
+    : 'No disponible';
+
+  let locationHtml = '';
+  if (d.lat && d.lng) {
+    locationHtml = `
+      <div class="modal-section">
+        <div class="modal-section-title">📍 Lugar de entrega</div>
+        <div id="modalMap" style="height: 200px; width: 100%; border-radius: 12px; margin-top: 8px;"></div>
+        <div style="font-size: 13px; color: var(--muted); margin-top: 8px;">
+          Coordenadas: <strong>${d.lat.toFixed(6)}, ${d.lng.toFixed(6)}</strong>
+        </div>
+        <a class="map-link-btn" href="https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lng}" target="_blank">
+          🗺️ Abrir en Google Maps
+        </a>
+      </div>
+    `;
+  } else {
+    locationHtml = `
+      <div class="modal-section">
+        <div class="modal-section-title">📍 Lugar de entrega</div>
+        <p class="muted">No se registró ubicación geográfica para esta donación.</p>
+      </div>
+    `;
+  }
+
+  const tieneFirma = !!d.firma_url;
+  const tieneFoto = !!d.evidencia_url;
+
+  if (d.estado !== 'entregado') {
+    let evidencePreviewHtml = '';
+    if (tieneFirma || tieneFoto) {
+      let previewSections = '';
+      if (tieneFirma) {
+        const firmaUrl = d.firma_url || d.evidencia_url;
+        previewSections += `
+          <div class="modal-section">
+            <div class="modal-section-title">✍️ Firma del Receptor</div>
+            <div class="evidence-img-container">
+              <img src="${firmaUrl}" alt="Firma del receptor" />
+            </div>
+          </div>
+        `;
+      }
+      if (tieneFoto) {
+        const fotoUrl = d.foto_entrega_url || d.evidencia_url;
+        previewSections += `
+          <div class="modal-section">
+            <div class="modal-section-title">📸 Foto de Entrega</div>
+            <div class="evidence-img-container">
+              <img src="${fotoUrl}" alt="Foto de entrega" />
+            </div>
+          </div>
+        `;
+      }
+      evidencePreviewHtml = `
+        <div style="margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+          <span class="badge ${d.estado}" style="margin-bottom: 8px;">${d.estado}</span>
+          <p style="font-size: 14px; line-height: 1.5;">El donante ha registrado la siguiente evidencia. Revisa y marca como entregado.</p>
+        </div>
+        ${previewSections}
+      `;
+    }
+
+    title.textContent = 'Evidencia de Entrega';
+    body.innerHTML = `
+      ${evidencePreviewHtml || `
+        <div style="margin-bottom: 16px;">
+          <span class="badge ${d.estado}" style="margin-bottom: 8px;">${d.estado}</span>
+          <p style="font-size: 14px; line-height: 1.5;">Esta donación aún <strong>no ha sido entregada</strong>. A continuación se detalla la ubicación registrada para la entrega:</p>
+        </div>
+      `}
+      ${locationHtml}
+    `;
+  } else {
+    title.textContent = 'Evidencia de Entrega';
+
+    let photoHtml = `<p class="muted">No se registró foto de entrega.</p>`;
+    let signatureHtml = `<p class="muted">No se registró firma digital.</p>`;
+
+    if (tieneFirma) {
+      const firmaUrl = d.firma_url || d.evidencia_url;
+      signatureHtml = `
+        <div class="evidence-img-container">
+          <img src="${firmaUrl}" alt="Firma del receptor" />
+        </div>
+      `;
+    }
+    if (tieneFoto) {
+      const fotoUrl = d.foto_entrega_url || d.evidencia_url;
+      photoHtml = `
+        <div class="evidence-img-container">
+          <img src="${fotoUrl}" alt="Foto de entrega" />
+        </div>
+      `;
+    }
+
+    body.innerHTML = `
+      <div style="margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+        <span class="badge entregado" style="margin-bottom: 8px;">Entregado</span>
+        <div class="evidence-info-row">
+          <span class="label">Fecha de Entrega:</span>
+          <span class="value">${formattedDate}</span>
+        </div>
+      </div>
+      
+      <div class="modal-section">
+        <div class="modal-section-title">📸 Foto de evidencia de entrega</div>
+        ${photoHtml}
+      </div>
+
+      <div class="modal-section" style="margin-top: 16px;">
+        <div class="modal-section-title">✍️ Firma del receptor</div>
+        ${signatureHtml}
+      </div>
+
+      <div style="margin-top: 16px; border-top: 1px solid var(--border); padding-top: 16px;">
+        ${locationHtml}
+      </div>
+    `;
+  }
+
+  // Initialize the Google Maps map after the DOM elements are rendered
+  if (d.lat && d.lng) {
+    setTimeout(() => {
+      try {
+        const mapDiv = document.getElementById('modalMap');
+        const pos = { lat: parseFloat(d.lat), lng: parseFloat(d.lng) };
+        const gMap = new google.maps.Map(mapDiv, {
+          center: pos,
+          zoom: 15,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false
+        });
+
+        const infoWindow = new google.maps.InfoWindow({
+          content: `<b>${escapeHtml(d.nombre)}</b><br>${d.estado === 'entregado' ? 'Entregado aquí' : 'Lugar de entrega'}`
+        });
+
+        const marker = new google.maps.Marker({
+          position: pos,
+          map: gMap,
+          title: d.nombre
+        });
+
+        marker.addListener('click', () => {
+          infoWindow.open(gMap, marker);
+        });
+
+        infoWindow.open(gMap, marker);
+      } catch (err) {
+        console.error("Error al inicializar mapa Google Maps:", err);
+      }
+    }, 200);
+  }
+}
+
 window.addEventListener("DOMContentLoaded", () => {
   if (getAdmin()) startAdmin();
 });
